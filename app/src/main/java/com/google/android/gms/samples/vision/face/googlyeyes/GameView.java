@@ -23,8 +23,8 @@ import org.greenrobot.eventbus.ThreadMode;
 import java.util.ArrayList;
 
 public class GameView extends SurfaceView {
-    private int rightBulletX = 0;
-    private int leftBulletX = 0;
+    private int rightCannonX = 0;
+    private int leftCannonX = 0;
     private int canvasWidth = 0;
     private int canvasHeight = 0;
     private static final int TARGET_SIZE = 100;
@@ -106,15 +106,16 @@ public class GameView extends SurfaceView {
     @Override
     protected void onDraw(Canvas canvas) {
         canvas.drawColor(Color.BLACK);
-        drawTriangle(leftBulletX + bulletBitmap.getWidth() / 2, getHeight(), 30, 30, false, textPaint, canvas);
-        drawTriangle(rightBulletX + bulletBitmap.getWidth() / 2, getHeight(), 30, 30, false, textPaint, canvas);
+        drawTriangle(leftCannonX + bulletBitmap.getWidth() / 2, canvasHeight, 30, 30, false, textPaint, canvas);
+        drawTriangle(rightCannonX + bulletBitmap.getWidth() / 2, canvasHeight, 30, 30, false, textPaint, canvas);
         if (gameOver) {
-            canvas.drawText("Game Over", getWidth() / 2, getHeight() / 2, textPaint);
+            canvas.drawText("Game Over", canvasWidth / 2, canvasHeight / 2, textPaint);
         }
+
         canvas.drawText("Bullets: " + Integer.toString(bulletCount), 50, 200, textPaint);
 
         for (GameObject go : targets) {
-            if (go.x == getWidth() - targetBitmap.getWidth()) {
+            if (go.x == canvasWidth - targetBitmap.getWidth()) {
                 xSpeed = -1;
             }
             if (go.x == 0) {
@@ -176,6 +177,13 @@ public class GameView extends SurfaceView {
         initializeTargets();
     }
 
+    @Override
+    protected void onSizeChanged(int w, int h, int oldw, int oldh) {
+        super.onSizeChanged(w, h, oldw, oldh);
+        canvasWidth = w;
+        canvasHeight = h;
+    }
+
     public boolean isCollision(int item1x, int item1y, int item1width, int item1height, int item2x, int item2y, int item2width, int item2height) {
         Rect rItem1 = new Rect(item1x, item1y, item1width, item1height);
         Rect rItem2 = new Rect(item2x, item2y, item2width, item2height);
@@ -193,22 +201,6 @@ public class GameView extends SurfaceView {
 //        return true;
 //    }
 
-    private void shoot(String position, float x) {
-        if (bulletCount <= 0)
-            return;
-        bulletCount--;
-        switch (position) {
-            case "left":
-                bullets.add(new Bullet(leftBulletX, getHeight()));
-                break;
-            case "right":
-                bullets.add(new Bullet(rightBulletX, getHeight()));
-                break;
-            default:
-                break;
-        }
-
-    }
 
     public void initializeTargets() {
         GameObject g1 = new GameObject(0, 10);
@@ -242,10 +234,43 @@ public class GameView extends SurfaceView {
 //        });
 //    }
 
-    @Subscribe(threadMode = ThreadMode.MAIN)
-    public void onEyeClosedEvent(EyeClosedEvent event) {
-        shoot(event.message, event.x);
+    @Subscribe(threadMode = ThreadMode.BACKGROUND)
+    public void onEyeUpdateEvent(EyeUpdateEvent event) {
+        moveCannon(event);
+        if(event.eyeClosed){
+            shoot(event.eye);
+        }
     }
+
+    private void moveCannon(EyeUpdateEvent event) {
+        switch (event.eye){
+            case LEFT:
+                leftCannonX = Math.round(event.x);
+                break;
+            case RIGHT:
+                rightCannonX = Math.round(event.x);
+                break;
+            default:
+                break;
+        }
+    }
+
+    private void shoot(Eye eye) {
+        if (bulletCount <= 0)
+            return;
+        bulletCount--;
+        switch (eye) {
+            case LEFT:
+                bullets.add(new Bullet(leftCannonX, canvasHeight));
+                break;
+            case RIGHT:
+                bullets.add(new Bullet(rightCannonX, canvasHeight));
+                break;
+            default:
+                break;
+        }
+    }
+
 
     class Bullet extends GameObject {
 

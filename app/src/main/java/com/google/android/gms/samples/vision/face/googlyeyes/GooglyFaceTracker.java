@@ -18,9 +18,6 @@ package com.google.android.gms.samples.vision.face.googlyeyes;
 import android.content.Context;
 import android.graphics.PointF;
 import android.os.Handler;
-import android.os.Looper;
-import android.os.Message;
-import android.widget.Toast;
 
 import com.google.android.gms.samples.vision.face.googlyeyes.ui.camera.GraphicOverlay;
 import com.google.android.gms.vision.Tracker;
@@ -99,8 +96,11 @@ class GooglyFaceTracker extends Tracker<Face> {
             isLeftOpen = mPreviousIsLeftOpen;
         } else {
             isLeftOpen = (leftOpenScore > EYE_CLOSED_THRESHOLD);
+
             if(mPreviousIsLeftOpen&& !isLeftOpen){
-                EventBus.getDefault().post(new EyeClosedEvent("left", leftPosition.x));
+                EventBus.getDefault().post(new EyeUpdateEvent(Eye.LEFT, mEyesGraphic.translateX(leftPosition.x), true));
+            }else{
+                EventBus.getDefault().post(new EyeUpdateEvent(Eye.LEFT, mEyesGraphic.translateX(leftPosition.x), false));
             }
             mPreviousIsLeftOpen = isLeftOpen;
         }
@@ -112,11 +112,12 @@ class GooglyFaceTracker extends Tracker<Face> {
         } else {
             isRightOpen = (rightOpenScore > EYE_CLOSED_THRESHOLD);
             if(mPreviousIsRightOpen && !isRightOpen){
-                EventBus.getDefault().post(new EyeClosedEvent("right", rightPosition.x));
+                EventBus.getDefault().post(new EyeUpdateEvent(Eye.RIGHT, mEyesGraphic.translateX(rightPosition.x), true));
+            }else{
+                EventBus.getDefault().post(new EyeUpdateEvent(Eye.RIGHT, mEyesGraphic.translateX(rightPosition.x), false));
             }
             mPreviousIsRightOpen = isRightOpen;
         }
-
         mEyesGraphic.updateEyes(leftPosition, isLeftOpen, rightPosition, isRightOpen);
     }
 
