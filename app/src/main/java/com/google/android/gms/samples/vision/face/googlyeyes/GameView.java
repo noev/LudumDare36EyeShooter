@@ -9,6 +9,7 @@ import android.graphics.Paint;
 import android.graphics.Path;
 import android.graphics.Point;
 import android.graphics.Rect;
+import android.provider.MediaStore;
 import android.util.AttributeSet;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
@@ -45,6 +46,7 @@ public class GameView extends SurfaceView {
     private Paint textPaint;
     private ArrayList<GameObject> targets = new ArrayList<>();
     private boolean gameOver = false;
+    private AudioEffect audio;
 
     public GameView(Context context) {
         super(context);
@@ -62,12 +64,13 @@ public class GameView extends SurfaceView {
         initializeGameView();
     }
 
-    private void initializeGameView(){
+    private void initializeGameView() {
         textPaint = new Paint();
         textPaint.setTextSize(TEXT_SIZE);
         textPaint.setColor(Color.WHITE);
 
         initializeTargets();
+        audio = new AudioEffect(getContext());
 
         EventBus.getDefault().register(this);
         gameLoopThread = new GameLoopThread(this);
@@ -129,6 +132,7 @@ public class GameView extends SurfaceView {
         for (Bullet b : bullets) {
             for (int i = targets.size() - 1; i >= 0; i--) {
                 if (isCollision(b.x, b.y, bulletBitmap.getWidth() + b.x, bulletBitmap.getHeight() + b.y, targets.get(i).x, targets.get(i).y, targetBitmap.getWidth() + targets.get(i).x, targetBitmap.getHeight() + targets.get(i).y)) {
+                    audio.playSound(R.raw.explosion);
                     targets.remove(i);
                     bulletCount += 3;
                     if (targets.size() == 0) {
@@ -237,13 +241,13 @@ public class GameView extends SurfaceView {
     @Subscribe(threadMode = ThreadMode.BACKGROUND)
     public void onEyeUpdateEvent(EyeUpdateEvent event) {
         moveCannon(event);
-        if(event.eyeClosed){
+        if (event.eyeClosed) {
             shoot(event.eye);
         }
     }
 
     private void moveCannon(EyeUpdateEvent event) {
-        switch (event.eye){
+        switch (event.eye) {
             case LEFT:
                 leftCannonX = Math.round(event.x);
                 break;
@@ -258,6 +262,7 @@ public class GameView extends SurfaceView {
     private void shoot(Eye eye) {
         if (bulletCount <= 0)
             return;
+        audio.playSound(R.raw.laser_shoot);
         bulletCount--;
         switch (eye) {
             case LEFT:
@@ -273,7 +278,6 @@ public class GameView extends SurfaceView {
 
 
     class Bullet extends GameObject {
-
         Bullet(int x, int y) {
             super(x, y);
         }
