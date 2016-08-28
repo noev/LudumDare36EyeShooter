@@ -27,6 +27,7 @@ public class GameView extends SurfaceView {
     private int leftCannonX = 0;
     private int canvasWidth = 0;
     private int canvasHeight = 0;
+    private int levelHeight = 0;
     private static final int TARGET_SIZE = 100;
     private static final int TARGET_Y = 10;
     private static final int TEXT_SIZE = 100;
@@ -35,7 +36,6 @@ public class GameView extends SurfaceView {
     private SurfaceHolder holder;
     private GameLoopThread gameLoopThread;
     private int x = 0;
-    private int xSpeed = 1;
     private int bulletSpeed = 10;
     private ArrayList<Bullet> bullets = new ArrayList<>();
     private long lastClick;
@@ -46,6 +46,10 @@ public class GameView extends SurfaceView {
     private ArrayList<GameObject> targets = new ArrayList<>();
     private boolean gameOver = false;
     private AudioEffect audio;
+    private int invaderSpeed = 5;
+    private int xSpeed = invaderSpeed;
+    private final int triangleHeight = 30;
+    private final int triangleWidth = 30;
 
     public GameView(Context context) {
         super(context);
@@ -68,7 +72,6 @@ public class GameView extends SurfaceView {
         textPaint.setTextSize(TEXT_SIZE);
         textPaint.setColor(Color.WHITE);
 
-        initializeTargets();
         audio = new AudioEffect(getContext());
 
         EventBus.getDefault().register(this);
@@ -108,7 +111,7 @@ public class GameView extends SurfaceView {
     @Override
     protected void onDraw(Canvas canvas) {
         canvas.drawColor(Color.BLACK);
-        drawTriangle(leftCannonX + bulletBitmap.getWidth() / 2, canvasHeight, 30, 30, false, textPaint, canvas);
+        drawTriangle(leftCannonX + bulletBitmap.getWidth() / 2, canvasHeight, triangleWidth, triangleHeight, false, textPaint, canvas);
         drawTriangle(rightCannonX + bulletBitmap.getWidth() / 2, canvasHeight, 30, 30, false, textPaint, canvas);
         if (gameOver) {
             canvas.drawText("Game Over", canvasWidth / 2, canvasHeight / 2, textPaint);
@@ -118,42 +121,62 @@ public class GameView extends SurfaceView {
 
         for (GameObject go : targets) {
             if (go.x == canvasWidth - targetBitmap.getWidth()) {
-                xSpeed = -1;
+                xSpeed = invaderSpeed;
+                xSpeed *= -1;
+                for (GameObject t : targets) {
+                    t.y += levelHeight;
+                }
             }
             if (go.x == 0) {
-                xSpeed = 1;
+                xSpeed = invaderSpeed;
+                for (GameObject t : targets) {
+                    t.y += levelHeight;
+                }
             }
             go.x = go.x + xSpeed;
 
             canvas.drawBitmap(targetBitmap, go.x, go.y, null);
+
+            if (spaceInvaderReachGround(go)) {
+                gameOver = true;
+            }
         }
 
         for (int z = bullets.size() - 1; z >= 0; z--) {
-            if(bullets.get(z).y < 0){
+            //destroy bullets that are outside of the View
+            if (bullets.get(z).y < 0) {
                 bullets.remove(z);
                 continue;
             }
+
+            //bullet & space invader collision detection
             for (int i = targets.size() - 1; i >= 0; i--) {
                 if (isCollision(bullets.get(z).x, bullets.get(z).y, bulletBitmap.getWidth() + bullets.get(z).x, bulletBitmap.getHeight() + bullets.get(z).y, targets.get(i).x, targets.get(i).y, targetBitmap.getWidth() + targets.get(i).x, targetBitmap.getHeight() + targets.get(i).y)) {
                     audio.playSound(R.raw.explosion);
                     targets.remove(i);
                     bullets.remove(z);
-                    bulletsLeft += 3;
+                    bulletsLeft += 1;
                     if (targets.size() == 0) {
                         gameOver = true;
                     }
                     break;
                 }
             }
+
             if (bullets.size() == 0) {
                 break;
             }
             if (bullets.size() == z || bullets.get(z) == null) {
                 continue;
             }
+
             bullets.get(z).y -= bulletSpeed;
             canvas.drawBitmap(bulletBitmap, bullets.get(z).x, bullets.get(z).y, null);
         }
+    }
+
+    private boolean spaceInvaderReachGround(GameObject go) {
+        return go.y + targetBitmap.getHeight() >= canvasHeight;
     }
 
     private void drawTriangle(int x, int y, int width, int height, boolean inverted, Paint paint, Canvas canvas) {
@@ -197,6 +220,8 @@ public class GameView extends SurfaceView {
         super.onSizeChanged(w, h, oldw, oldh);
         canvasWidth = w;
         canvasHeight = h;
+        levelHeight = canvasHeight / 10;
+        initializeTargets();
     }
 
     public boolean isCollision(int item1x, int item1y, int item1width, int item1height, int item2x, int item2y, int item2width, int item2height) {
@@ -218,14 +243,14 @@ public class GameView extends SurfaceView {
 
 
     public void initializeTargets() {
-        GameObject g1 = new GameObject(0, 10);
-        GameObject g2 = new GameObject(200, 10);
-        GameObject g3 = new GameObject(400, 10);
+        GameObject g1 = new GameObject(10, 0);
+        GameObject g2 = new GameObject(210, 0);
+        GameObject g3 = new GameObject(410, 0);
 
-        GameObject g4 = new GameObject(100, 200);
-        GameObject g5 = new GameObject(300, 200);
+        GameObject g4 = new GameObject(110, levelHeight);
+        GameObject g5 = new GameObject(310, levelHeight);
 
-        GameObject g6 = new GameObject(200, 400);
+        GameObject g6 = new GameObject(210, levelHeight * 2);
 
         targets.add(g1);
         targets.add(g2);
