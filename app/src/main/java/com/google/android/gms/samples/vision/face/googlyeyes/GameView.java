@@ -9,7 +9,6 @@ import android.graphics.Paint;
 import android.graphics.Path;
 import android.graphics.Point;
 import android.graphics.Rect;
-import android.provider.MediaStore;
 import android.util.AttributeSet;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
@@ -42,7 +41,7 @@ public class GameView extends SurfaceView {
     private long lastClick;
     private Tracker<Face> faceTracker;
     private boolean targetAlive = true;
-    private int bulletCount = 10;
+    private int bulletsLeft = 10;
     private Paint textPaint;
     private ArrayList<GameObject> targets = new ArrayList<>();
     private boolean gameOver = false;
@@ -115,7 +114,7 @@ public class GameView extends SurfaceView {
             canvas.drawText("Game Over", canvasWidth / 2, canvasHeight / 2, textPaint);
         }
 
-        canvas.drawText("Bullets: " + Integer.toString(bulletCount), 50, 200, textPaint);
+        canvas.drawText("Bullets: " + Integer.toString(bulletsLeft), 50, 200, textPaint);
 
         for (GameObject go : targets) {
             if (go.x == canvasWidth - targetBitmap.getWidth()) {
@@ -129,19 +128,31 @@ public class GameView extends SurfaceView {
             canvas.drawBitmap(targetBitmap, go.x, go.y, null);
         }
 
-        for (Bullet b : bullets) {
+        for (int z = bullets.size() - 1; z >= 0; z--) {
+            if(bullets.get(z).y < 0){
+                bullets.remove(z);
+                continue;
+            }
             for (int i = targets.size() - 1; i >= 0; i--) {
-                if (isCollision(b.x, b.y, bulletBitmap.getWidth() + b.x, bulletBitmap.getHeight() + b.y, targets.get(i).x, targets.get(i).y, targetBitmap.getWidth() + targets.get(i).x, targetBitmap.getHeight() + targets.get(i).y)) {
+                if (isCollision(bullets.get(z).x, bullets.get(z).y, bulletBitmap.getWidth() + bullets.get(z).x, bulletBitmap.getHeight() + bullets.get(z).y, targets.get(i).x, targets.get(i).y, targetBitmap.getWidth() + targets.get(i).x, targetBitmap.getHeight() + targets.get(i).y)) {
                     audio.playSound(R.raw.explosion);
                     targets.remove(i);
-                    bulletCount += 3;
+                    bullets.remove(z);
+                    bulletsLeft += 3;
                     if (targets.size() == 0) {
                         gameOver = true;
                     }
+                    break;
                 }
             }
-            b.y -= bulletSpeed;
-            canvas.drawBitmap(bulletBitmap, b.x, b.y, null);
+            if (bullets.size() == 0) {
+                break;
+            }
+            if (bullets.size() == z || bullets.get(z) == null) {
+                continue;
+            }
+            bullets.get(z).y -= bulletSpeed;
+            canvas.drawBitmap(bulletBitmap, bullets.get(z).x, bullets.get(z).y, null);
         }
     }
 
@@ -260,10 +271,10 @@ public class GameView extends SurfaceView {
     }
 
     private void shoot(Eye eye) {
-        if (bulletCount <= 0)
+        if (bulletsLeft <= 0)
             return;
         audio.playSound(R.raw.laser_shoot);
-        bulletCount--;
+        bulletsLeft--;
         switch (eye) {
             case LEFT:
                 bullets.add(new Bullet(leftCannonX, canvasHeight));
