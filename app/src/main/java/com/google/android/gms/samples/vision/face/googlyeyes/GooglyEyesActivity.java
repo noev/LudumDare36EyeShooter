@@ -31,6 +31,7 @@ import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.View;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.google.android.gms.common.ConnectionResult;
@@ -44,6 +45,10 @@ import com.google.android.gms.vision.Tracker;
 import com.google.android.gms.vision.face.Face;
 import com.google.android.gms.vision.face.FaceDetector;
 import com.google.android.gms.vision.face.LargestFaceFocusingProcessor;
+
+import org.greenrobot.eventbus.EventBus;
+import org.greenrobot.eventbus.Subscribe;
+import org.greenrobot.eventbus.ThreadMode;
 
 import java.io.IOException;
 
@@ -80,6 +85,7 @@ public final class GooglyEyesActivity extends AppCompatActivity {
 
     private boolean mIsFrontFacing = true;
     private GameView gameview;
+    private TextView bulletsLeftTextview;
 
     //==============================================================================================
     // Activity Methods
@@ -93,10 +99,12 @@ public final class GooglyEyesActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.main);
 
+        EventBus.getDefault().register(this);
+
         mPreview = (CameraSourcePreview) findViewById(R.id.preview);
         mGraphicOverlay = (GraphicOverlay) findViewById(R.id.faceOverlay);
         gameview = (GameView)findViewById(R.id.gameview);
-
+        bulletsLeftTextview = (TextView)findViewById(R.id.bullets_left_textview);
 
 //        final Button button = (Button) findViewById(R.id.flipButton);
 //        button.setOnClickListener(mFlipButtonListener);
@@ -411,5 +419,10 @@ public final class GooglyEyesActivity extends AppCompatActivity {
     public void restartButtonClicked(View view) {
         if(gameview!= null)
             gameview.restart();
+    }
+
+    @Subscribe(threadMode = ThreadMode.MAIN)
+    public void onEyeUpdateEvent(BulletUpdateEvent event) {
+        bulletsLeftTextview.setText(Integer.toString(event.bulletsLeft));
     }
 }

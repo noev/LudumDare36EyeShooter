@@ -1,6 +1,7 @@
 package com.google.android.gms.samples.vision.face.googlyeyes;
 
 import android.content.Context;
+import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
@@ -10,8 +11,10 @@ import android.graphics.Path;
 import android.graphics.Point;
 import android.graphics.Rect;
 import android.util.AttributeSet;
+import android.util.TypedValue;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
+import android.widget.TextView;
 
 import com.google.android.gms.vision.Tracker;
 import com.google.android.gms.vision.face.Face;
@@ -33,6 +36,7 @@ public class GameView extends SurfaceView {
     private static final int TEXT_SIZE = 100;
     private Bitmap targetBitmap;
     private Bitmap bulletBitmap;
+    private Bitmap gameOverBitmap;
     private SurfaceHolder holder;
     private GameLoopThread gameLoopThread;
     private int x = 0;
@@ -50,6 +54,7 @@ public class GameView extends SurfaceView {
     private int xSpeed = invaderSpeed;
     private final int triangleHeight = 30;
     private final int triangleWidth = 30;
+    TextView bulletsLeftTextView;
 
     public GameView(Context context) {
         super(context);
@@ -73,6 +78,7 @@ public class GameView extends SurfaceView {
         textPaint.setColor(Color.WHITE);
 
         audio = new AudioEffect(getContext());
+
 
         EventBus.getDefault().register(this);
         gameLoopThread = new GameLoopThread(this);
@@ -106,6 +112,7 @@ public class GameView extends SurfaceView {
         targetBitmap = BitmapFactory.decodeResource(getResources(), R.drawable.invader);
         targetBitmap = Bitmap.createScaledBitmap(targetBitmap, 100, 100, false);
         bulletBitmap = BitmapFactory.decodeResource(getResources(), R.drawable.bullet);
+        gameOverBitmap = BitmapFactory.decodeResource(getResources(), R.drawable.gameover);
     }
 
     @Override
@@ -114,10 +121,15 @@ public class GameView extends SurfaceView {
         drawTriangle(leftCannonX + bulletBitmap.getWidth() / 2, canvasHeight, triangleWidth, triangleHeight, false, textPaint, canvas);
         drawTriangle(rightCannonX + bulletBitmap.getWidth() / 2, canvasHeight, 30, 30, false, textPaint, canvas);
         if (gameOver) {
-            canvas.drawText("Game Over", canvasWidth / 2, canvasHeight / 2, textPaint);
+            canvas.drawBitmap(gameOverBitmap, (canvasWidth / 2) - gameOverBitmap.getWidth() / 2, (canvasHeight /2 ) - gameOverBitmap.getHeight() /2, null);
+//            canvas.drawText("Game Over", canvasWidth / 2, canvasHeight / 2, textPaint);
         }
 
-        canvas.drawText("Bullets: " + Integer.toString(bulletsLeft), 50, 200, textPaint);
+        //canvas.drawText("Bullets: " + Integer.toString(bulletsLeft), 50, 200, textPaint);
+        if(bulletsLeftTextView != null){
+            bulletsLeftTextView.setText(Integer.toString(bulletsLeft));
+        }
+
 
         for (GameObject go : targets) {
             if (go.x == canvasWidth - targetBitmap.getWidth()) {
@@ -156,6 +168,7 @@ public class GameView extends SurfaceView {
                     targets.remove(i);
                     bullets.remove(z);
                     bulletsLeft += 1;
+                    EventBus.getDefault().post(new BulletUpdateEvent(bulletsLeft));
                     if (targets.size() == 0) {
                         gameOver = true;
                     }
@@ -300,6 +313,7 @@ public class GameView extends SurfaceView {
             return;
         audio.playSound(R.raw.laser_shoot);
         bulletsLeft--;
+        EventBus.getDefault().post(new BulletUpdateEvent(bulletsLeft));
         switch (eye) {
             case LEFT:
                 bullets.add(new Bullet(leftCannonX, canvasHeight));
@@ -317,5 +331,10 @@ public class GameView extends SurfaceView {
         Bullet(int x, int y) {
             super(x, y);
         }
+    }
+
+    public float dpToPx(int dp){
+        Resources r = getResources();
+        return TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, dp, r.getDisplayMetrics());
     }
 }

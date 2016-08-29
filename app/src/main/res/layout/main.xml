@@ -7,16 +7,36 @@
     android:keepScreenOn="true"
     android:orientation="vertical">
 
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="0.05"
+        android:background="@color/black">
+        <ImageView
+            android:id="@+id/bullet_imageview"
+            android:layout_width="30dp"
+            android:layout_height="30dp"
+            android:layout_centerVertical="true"
+            android:src="@drawable/bullet"/>
+        <TextView
+            android:id="@+id/bullets_left_textview"
+            android:layout_toRightOf="@id/bullet_imageview"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_centerVertical="true"
+            android:text="10"
+            android:textColor="@color/white"/>
+    </RelativeLayout>
     <com.google.android.gms.samples.vision.face.googlyeyes.GameView
         android:id="@+id/gameview"
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:layout_weight="0.45" />
+        android:layout_weight="0.55" />
 
     <RelativeLayout
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:layout_weight="0.45">
+        android:layout_weight="0.30">
 
         <com.google.android.gms.samples.vision.face.googlyeyes.ui.camera.CameraSourcePreview
             android:id="@+id/preview"
